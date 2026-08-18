@@ -1,0 +1,42 @@
+<!-- ==========================================================
+     CONSENT GATE — OBEL Foundation
+     Site settings > Custom code > Head code, ABOVE everything
+     else already in that field (Swiper, Lumos, Finsweet).
+
+     Theme variables are mapped onto the site's Lumos tokens so
+     the blocked-embed placeholder inherits the current colour
+     theme rather than sitting there in default greys.
+     ========================================================== -->
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.0/dist/consent-gate.css">
+
+<style>
+  :root {
+    --cg-border: var(--_theme---border);
+    --cg-surface: var(--_theme---background-2);
+    --cg-text: var(--_theme---text);
+    --cg-text-muted: var(--_theme---text-faded);
+    --cg-radius: var(--radius--round, 0);
+    --cg-font-size: var(--_typography---font-size--text-small);
+  }
+</style>
+
+<script>
+  /* Danish-language placeholder; the banner and panel text live in
+     the Designer. Vimeo is added explicitly because OBEL embeds it
+     via player.vimeo.com paths the default list already covers —
+     kept here as the place to add anything new. */
+  window.ConsentGateConfig = {
+    text: {
+      placeholder: "Dette indhold hostes af en tredjepart, der sætter cookies.",
+      placeholderButton: "Tillad og indlæs",
+      bannerLabel: "Cookie-samtykke"
+    }
+  };
+</script>
+
+<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.0/dist/consent-gate.min.js"
+        data-cg-cookie="obel-cc"
+        data-cg-categories="analytics,personalization,marketing"
+        data-cg-lifetime="180"
+        data-cg-version="1"></script>

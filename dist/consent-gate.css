@@ -1,0 +1,75 @@
+/* ============================================================
+   CONSENT GATE — optional placeholder styles
+   ------------------------------------------------------------
+   The banner, preferences panel and manager button are YOUR
+   markup and YOUR styles. The only thing this script generates
+   is the placeholder that stands in for a blocked embed, so this
+   is the only thing that needs styling — and it is optional.
+
+   Everything reads from custom properties, so drop this in and
+   override the four variables to match the site. In Webflow,
+   point them at your Lumos / design-system variables.
+   ============================================================ */
+:root {
+  --cg-border: currentColor;
+  --cg-surface: transparent;
+  --cg-text: inherit;
+  --cg-text-muted: inherit;
+  --cg-radius: 0;
+  --cg-gap: 0.75rem;
+  --cg-pad: 1.5rem;
+  --cg-font-size: 0.875rem;
+}
+
+/* Sized by aspect ratio rather than a fixed height, so swapping
+   in the real embed does not shift the layout. */
+[data-cc-placeholder] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cg-gap);
+
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  padding: var(--cg-pad);
+
+  border: 1px solid var(--cg-border);
+  border-radius: var(--cg-radius);
+  background-color: var(--cg-surface);
+  color: var(--cg-text);
+  text-align: center;
+}
+
+[data-cc-placeholder-text] {
+  margin: 0;
+  max-width: 36ch;
+  color: var(--cg-text-muted);
+  font-size: var(--cg-font-size);
+  text-wrap: balance;
+}
+
+[data-cc-placeholder-button] {
+  padding: 0.6em 1.2em;
+  border: 1px solid currentColor;
+  border-radius: var(--cg-radius);
+  background-color: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--cg-font-size);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+[data-cc-placeholder-button]:hover {
+  background-color: currentColor;
+}
+
+[data-cc-placeholder-button]:hover > * {
+  color: var(--cg-surface);
+}
+
+[data-cc-placeholder-button]:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

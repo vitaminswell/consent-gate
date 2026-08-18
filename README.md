@@ -8,7 +8,7 @@ Consent Mode v2, and costs nothing.
 No subscription.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.0/dist/consent-gate.min.js"
+<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.1/dist/consent-gate.min.js"
         data-cg-cookie="acme-consent"></script>
 ```
 
@@ -29,7 +29,7 @@ This is the attribute toggling, done properly.
 **1. Load it in the `<head>`, above every tracker.**
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.0/dist/consent-gate.min.js"
+<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.1/dist/consent-gate.min.js"
         data-cg-cookie="acme-consent"></script>
 ```
 
@@ -178,6 +178,7 @@ Everything else goes in a global declared **before** the script:
 | `version` | `1` | Bump to re-ask everyone. |
 | `domain` | `null` | `".example.com"` to share across subdomains. |
 | `closeMeans` | `"deny"` | Or `"none"` to keep asking. Never make it accept. |
+| `visibleClass` | `null` | Combo class toggled when a container is shown. See below. |
 | `categories` | analytics, personalization, marketing | Category → the Consent Mode signals it governs. Rename freely; the UI follows. |
 | `consentMode` | `true` | Turn off only if the site has no Google tags at all. |
 | `autoBlockEmbeds` | `true` | Catch untagged third-party iframes. |
@@ -188,6 +189,31 @@ Everything else goes in a global declared **before** the script:
 | `text` | English | The whole translation surface. |
 
 `essential` is implicit, always granted, and needs no checkbox.
+
+### Hiding the component in a visual editor
+
+By default the script shows an element by removing `[hidden]` and letting your
+own class supply the display value — so it never has to guess flex vs grid vs
+block. The trade-off: **you cannot put `display: none` on that base class.** It
+would win, and the banner would silently never appear, in the editor *and*
+live. There is no error; it just doesn't show.
+
+If you want the component out of the way while designing, invert it with
+`visibleClass`:
+
+```html
+<script src=".../consent-gate.min.js" data-cg-visible-class="is-visible"></script>
+```
+
+```css
+.cookie_banner_wrap            { display: none }   /* base — invisible in the editor */
+.cookie_banner_wrap.is-visible { display: flex }   /* combo — the real layout */
+```
+
+The combo class has higher specificity, so it wins whenever the script applies
+it. Do the same on the preferences panel and the manager button. In Webflow:
+set `display: none` on the base class, add an `is-visible` combo class, and set
+the real display there.
 
 ## API
 

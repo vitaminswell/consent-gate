@@ -8,9 +8,9 @@
 <style>
   /* keep everything measurable in headless; the script injects its
      own critical CSS, which this must not pre-empt */
-  [data-cc="banner"],[data-cc="preferences"],[data-cc="manager"]{display:block}
+__CG_BASE_CSS__
 </style>
-<script src="/consent-gate.js" data-cg-cookie="cg-test"></script>
+<script src="/consent-gate.js" data-cg-cookie="cg-test"__CG_ATTRS__></script>
 
 <!-- ===== trackers that must not fire before consent ===== -->
 <script type="text/plain" data-cc-category="analytics">
@@ -26,14 +26,14 @@
 <body>
 
 <!-- ===== BANNER (mirrors a Webflow cookie banner component) ===== -->
-<div class="cookie5-wrapper">
-  <div class="cookie-banner5_component" data-cc="banner">
-    <div class="cookie-banner5_close-button" data-cc="close"><span>×</span></div>
-    <div class="cookie-banner5_content-top">
+<div class="cookie_wrap">
+  <div class="cookie_banner_wrap" data-cc="banner">
+    <div class="cookie_banner_close" data-cc="close"><span>×</span></div>
+    <div class="cookie_banner_content">
       <div>By clicking “Accept”, you agree to the storing of cookies on your device.
         <a href="/legal/privacy-policy">Privacy Policy</a></div>
     </div>
-    <div class="cookie-banner5_buttons-wrapper">
+    <div class="cookie_banner_buttons">
       <a href="#" class="button" data-cc="allow">Accept</a>
       <a href="#" class="button is-secondary" data-cc="deny">Decline</a>
       <a href="#" class="button is-link" data-cc="open-preferences"><div>Preferences</div></a>
@@ -41,70 +41,70 @@
   </div>
 
   <!-- ===== FLOATING MANAGER ===== -->
-  <div class="cookie-manager5_component" data-cc="manager">
-    <div class="cookie-manager5_button" data-cc="open-preferences"><div>Cookie preferences</div></div>
+  <div class="cookie_manager_wrap" data-cc="manager">
+    <div class="cookie_manager_button" data-cc="open-preferences"><div>Cookie preferences</div></div>
   </div>
 
   <!-- ===== PREFERENCES MODAL ===== -->
-  <div class="cookie-prefs5_component" data-cc="preferences" data-cc-scroll="disable">
-    <form class="cookie-prefs5_form" id="wf-form-Cookie-Preferences-2">
-      <div class="cookie-prefs5_close-button" data-cc="close"><span>×</span></div>
-      <div class="cookie-prefs5_content">
-        <div class="toggle2_subtitle">Privacy Preferences</div>
-        <div class="cookie-prefs5_list">
+  <div class="cookie_prefs_wrap" data-cc="preferences" data-cc-scroll="disable">
+    <form class="cookie_prefs_form" id="wf-form-Cookie-Preferences-2">
+      <div class="cookie_prefs_close" data-cc="close"><span>×</span></div>
+      <div class="cookie_prefs_content">
+        <div class="cookie_prefs_title">Privacy Preferences</div>
+        <div class="cookie_prefs_list">
 
-          <div class="cookie-prefs5_item">
-            <div class="cookie-prefs5_item-checkbox">
-              <div class="toggle2_tagline">Essential</div>
+          <div class="cookie_prefs_item">
+            <div class="cookie_prefs_row">
+              <div class="cookie_prefs_category">Essential</div>
               <div class="u-weight-bold">Required</div>
             </div>
             <div>These items are required to enable basic website functionality.</div>
           </div>
 
-          <div class="cookie-prefs5_item">
-            <div class="cookie-prefs5_item-checkbox">
-              <div class="toggle2_tagline">Marketing</div>
-              <label class="w-checkbox toggle2_field" data-cc-toggle>
-                <div class="w-checkbox-input w-checkbox-input--inputType-custom toggle2_button"></div>
+          <div class="cookie_prefs_item">
+            <div class="cookie_prefs_row">
+              <div class="cookie_prefs_category">Marketing</div>
+              <label class="w-checkbox cookie_toggle_wrap" data-cc-toggle>
+                <div class="w-checkbox-input w-checkbox-input--inputType-custom cookie_toggle_input"></div>
                 <input type="checkbox" id="cc-marketing" data-cc-checkbox="marketing" style="opacity:0;position:absolute">
-                <span class="toggle2_label w-form-label">Marketing</span>
+                <span class="cookie_toggle_label w-form-label">Marketing</span>
               </label>
             </div>
             <div>These items are used to deliver advertising that is more relevant to you.</div>
           </div>
 
-          <div class="cookie-prefs5_item">
-            <div class="cookie-prefs5_item-checkbox">
-              <div class="toggle2_tagline">Personalization</div>
-              <label class="w-checkbox toggle2_field" data-cc-toggle>
-                <div class="w-checkbox-input w-checkbox-input--inputType-custom toggle2_button"></div>
+          <div class="cookie_prefs_item">
+            <div class="cookie_prefs_row">
+              <div class="cookie_prefs_category">Personalization</div>
+              <label class="w-checkbox cookie_toggle_wrap" data-cc-toggle>
+                <div class="w-checkbox-input w-checkbox-input--inputType-custom cookie_toggle_input"></div>
                 <input type="checkbox" id="cc-personalization" data-cc-checkbox="personalization" style="opacity:0;position:absolute">
-                <span class="toggle2_label w-form-label">Personalization</span>
+                <span class="cookie_toggle_label w-form-label">Personalization</span>
               </label>
             </div>
             <div>These items allow the website to remember choices you make.</div>
           </div>
 
-          <div class="cookie-prefs5_item">
-            <div class="cookie-prefs5_item-checkbox">
-              <div class="toggle2_tagline">Analytics</div>
-              <label class="w-checkbox toggle2_field" data-cc-toggle>
-                <div class="w-checkbox-input w-checkbox-input--inputType-custom toggle2_button"></div>
+          <div class="cookie_prefs_item">
+            <div class="cookie_prefs_row">
+              <div class="cookie_prefs_category">Analytics</div>
+              <label class="w-checkbox cookie_toggle_wrap" data-cc-toggle>
+                <div class="w-checkbox-input w-checkbox-input--inputType-custom cookie_toggle_input"></div>
                 <input type="checkbox" id="cc-analytics" data-cc-checkbox="analytics" style="opacity:0;position:absolute">
-                <span class="toggle2_label w-form-label">Analytics</span>
+                <span class="cookie_toggle_label w-form-label">Analytics</span>
               </label>
             </div>
             <div>These items help the website operator understand how its website performs.</div>
           </div>
 
         </div>
-        <div class="cookie-prefs5_buttons-wrapper">
+        <div class="cookie_prefs_buttons">
           <a href="#" class="button is-secondary" data-cc="deny">Reject all cookies</a>
           <a href="#" class="button" data-cc="submit">Save preferences</a>
         </div>
       </div>
     </form>
-    <div class="cookie-prefs5_overlay" data-cc="close"></div>
+    <div class="cookie_prefs_overlay" data-cc="close"></div>
   </div>
 </div>
 

@@ -23,9 +23,21 @@ const server = http.createServer((req, res) => {
     // Embeds are served from a different host than the page so that
     // the CSP's 'self' does not accidentally whitelist them — same
     // relationship as vimeo.com to obel.foundation.
+    // ?visible=1 serves the visibleClass variant: display:none on the
+    // base selector (the "invisible in the Designer" setup) with the
+    // real display carried by an is-visible combo class.
+    const variant = /[?&]visible=1/.test(req.url);
     const html = fs
       .readFileSync(path.join(__dirname, "harness.html"), "utf8")
-      .replace(/__EMBED_ORIGIN__/g, `http://localhost:${server.address().port}`);
+      .replace(/__EMBED_ORIGIN__/g, `http://localhost:${server.address().port}`)
+      .replace("__CG_ATTRS__", variant ? ' data-cg-visible-class="is-visible"' : "")
+      .replace(
+        "__CG_BASE_CSS__",
+        variant
+          ? '[data-cc="banner"],[data-cc="preferences"],[data-cc="manager"]{display:none}\n' +
+            '  [data-cc].is-visible{display:block}'
+          : '[data-cc="banner"],[data-cc="preferences"],[data-cc="manager"]{display:block}'
+      );
     res.writeHead(200, { "Content-Type": "text/html" });
     return res.end(html);
   }
@@ -143,7 +155,9 @@ function cookieFor(consent, { ageDays = 0, version = 1 } = {}) {
 
 /* ---------- suite ---------- */
 async function run() {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+  });
 
   /* === 1. FIRST VISIT: nothing may fire === */
   {
@@ -525,6 +539,61 @@ async function run() {
     await page.waitForTimeout(150);
     check("reset() clears the cookie", (await storedConsent(context)) === null);
     eq("reset() brings the banner back", (await visible(page)).banner, true);
+    await context.close();
+  }
+
+  /* === 11. visibleClass — the "hide it in the Designer" setup ===
+     Base selector is display:none so the component is out of the way
+     in a visual editor. Only the combo class may make it render, so
+     these assertions check actual layout, not just the attribute. */
+  {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    requestLog = [];
+    await page.goto(BASE() + "?visible=1", { waitUntil: "networkidle" });
+
+    const rendered = () =>
+      page.evaluate(() => {
+        const at = (sel) => {
+          const el = document.querySelector(sel);
+          return {
+            cls: el.classList.contains("is-visible"),
+            painted: el.offsetParent !== null
+          };
+        };
+        return {
+          banner: at('[data-cc="banner"]'),
+          prefs: at('[data-cc="preferences"]'),
+          manager: at('[data-cc="manager"]')
+        };
+      });
+
+    eq("visibleClass shows only the banner on a first visit", await rendered(), {
+      banner: { cls: true, painted: true },
+      prefs: { cls: false, painted: false },
+      manager: { cls: false, painted: false }
+    });
+
+    await page.click('[data-cc="open-preferences"]');
+    await page.waitForTimeout(150);
+    eq("visibleClass swaps banner for the panel", await rendered(), {
+      banner: { cls: false, painted: false },
+      prefs: { cls: true, painted: true },
+      manager: { cls: false, painted: false }
+    });
+
+    await page.click('[data-cc="submit"]');
+    await page.waitForTimeout(300);
+    eq("visibleClass leaves only the manager after a decision", await rendered(), {
+      banner: { cls: false, painted: false },
+      prefs: { cls: false, painted: false },
+      manager: { cls: true, painted: true }
+    });
+
+    check(
+      "visibleClass still stores the decision",
+      (await storedConsent(context)) !== null
+    );
     await context.close();
   }
 

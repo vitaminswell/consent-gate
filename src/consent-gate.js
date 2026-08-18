@@ -7,7 +7,7 @@
 
    Load it SYNCHRONOUSLY in the <head>, above every tracker:
 
-     <script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.0/dist/consent-gate.min.js"
+     <script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.1/dist/consent-gate.min.js"
              data-cg-cookie="acme-consent"></script>
 
    Not async, not defer. That is not a style preference — the
@@ -54,6 +54,21 @@
     // the most-cited dark pattern in EU enforcement, so the only
     // defensible values are "deny" or "none" (keep asking).
     closeMeans: "deny",
+
+    // Optional combo class toggled on the banner / preferences /
+    // manager when each is shown.
+    //
+    // By default this library shows an element by removing [hidden]
+    // and letting your own class supply the display value, so it
+    // never has to guess flex vs grid vs block. The cost is that you
+    // cannot set display:none on that base class — it would win, and
+    // the banner would silently never appear.
+    //
+    // Set this (e.g. "is-visible") to invert it: put display:none on
+    // the base class so the component is out of the way in a visual
+    // editor, and the real display on the combo class. Higher
+    // specificity means the combo wins when the class is applied.
+    visibleClass: null,
 
     // Category -> the Google Consent Mode v2 signals it governs.
     // Add, remove or rename freely; the UI is driven by whatever
@@ -128,6 +143,7 @@
       version: "version",
       domain: "domain",
       close: "closeMeans",
+      "visible-class": "visibleClass",
       categories: "categories",
       "consent-mode": "consentMode",
       "auto-block": "autoBlockEmbeds",
@@ -515,10 +531,14 @@
      UI
      --------------------------------------------------------- */
   function show(el) {
-    if (el) el.removeAttribute("hidden");
+    if (!el) return;
+    el.removeAttribute("hidden");
+    if (CFG.visibleClass) el.classList.add(CFG.visibleClass);
   }
   function hide(el) {
-    if (el) el.setAttribute("hidden", "");
+    if (!el) return;
+    el.setAttribute("hidden", "");
+    if (CFG.visibleClass) el.classList.remove(CFG.visibleClass);
   }
 
   function openPreferences() {

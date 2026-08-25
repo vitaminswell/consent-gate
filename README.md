@@ -8,7 +8,7 @@ Consent Mode v2, and costs nothing.
 No subscription.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.1/dist/consent-gate.min.js"
+<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.2/dist/consent-gate.min.js"
         data-cg-cookie="acme-consent"></script>
 ```
 
@@ -29,7 +29,7 @@ This is the attribute toggling, done properly.
 **1. Load it in the `<head>`, above every tracker.**
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.1/dist/consent-gate.min.js"
+<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.2/dist/consent-gate.min.js"
         data-cg-cookie="acme-consent"></script>
 ```
 
@@ -65,8 +65,8 @@ cookies it claims to gate are already set.
 </div>
 ```
 
-**3. Optionally** add `dist/consent-gate.css` for the blocked-embed
-placeholder. Everything else is styled by you.
+**3. Optionally** add a placeholder template for blocked embeds (see below).
+Everything is styled by you — this script ships no CSS you have to adopt.
 
 ### Markup reference
 
@@ -82,6 +82,8 @@ placeholder. Everything else is styled by you.
 | `data-cc="close"` | button | Close dialog, or dismiss banner (see `closeMeans`) |
 | `data-cc-checkbox="<category>"` | `input[type=checkbox]` | Toggle for one category |
 | `data-cc-toggle` | wrapper *(optional)* | Gets `data-cc-checked="true\|false"` mirrored onto it, for styling custom toggles |
+| `data-cc-placeholder-template` | container *(optional)* | Cloned in place of each blocked embed. See below |
+| `data-cc="allow-embed"` | button, inside the template | Loads that embed by granting its category |
 
 ## Tagging trackers
 
@@ -111,6 +113,34 @@ fire outside GTM.
 
 Untagged YouTube / Vimeo / Maps iframes are caught automatically, but tag them
 properly where you can — see below for why.
+
+### The blocked-embed placeholder
+
+A blocked embed leaves a hole, and something has to fill it. That placeholder is
+the only UI this script would otherwise have to invent — which would drag its
+styling and copy into code. So don't let it: build the placeholder yourself and
+mark it as a template.
+
+```html
+<div data-cc-placeholder-template class="my-placeholder">
+  <p>This content is hosted by a third party that sets cookies.</p>
+  <button data-cc="allow-embed">Allow and load</button>
+</div>
+```
+
+It is cloned once per blocked embed, so layout, classes, copy and translation
+all stay where the rest of your design lives. One template serves every embed
+on the site — put it in a global component.
+
+Two details worth knowing:
+
+- The template is hidden on the live site by the script's own critical CSS, but
+  a visual editor doesn't run that script, so it stays **visible while you're
+  designing**. That is deliberate: you need to see it to style it.
+- Controls inside the template are inert. Only the clones respond.
+
+Without a template you get a minimal generated fallback using `text.placeholder`
+and `text.placeholderButton` — fine for a prototype, not for a real site.
 
 ## How the blocking works
 
@@ -293,6 +323,13 @@ This is a tool, not legal advice. Two things it can't do for you:
 npm install
 npx playwright install chromium
 npm test        # runs the suite against src, then against the built bundle
+```
+
+If you're in a sandbox that pins its own Chromium build rather than letting
+Playwright install one, point at it explicitly:
+
+```bash
+PLAYWRIGHT_CHROMIUM_PATH=/path/to/chrome npm test
 ```
 
 52 assertions covering pre-consent silence, Consent Mode signals, accept /

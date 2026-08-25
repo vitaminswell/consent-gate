@@ -31,6 +31,17 @@ const server = http.createServer((req, res) => {
       .readFileSync(path.join(__dirname, "harness.html"), "utf8")
       .replace(/__EMBED_ORIGIN__/g, `http://localhost:${server.address().port}`)
       .replace("__CG_ATTRS__", variant ? ' data-cg-visible-class="is-visible"' : "")
+      // ?template=1 supplies an author-built placeholder for the script
+      // to clone, instead of the generated fallback.
+      .replace(
+        "__CG_TEMPLATE__",
+        /[?&]template=1/.test(req.url)
+          ? '<div data-cc-placeholder-template class="my_placeholder">\n' +
+            '  <p class="my_placeholder_text">Indhold fra tredjepart.</p>\n' +
+            '  <a href="#" class="my_placeholder_btn" data-cc="allow-embed">Tillad</a>\n' +
+            "</div>"
+          : ""
+      )
       .replace(
         "__CG_BASE_CSS__",
         variant
@@ -155,9 +166,14 @@ function cookieFor(consent, { ageDays = 0, version = 1 } = {}) {
 
 /* ---------- suite ---------- */
 async function run() {
-  const browser = await chromium.launch({
-    executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
-  });
+  // Let Playwright resolve its own install. Hardcoding a path pins the
+  // suite to one machine's browser build — which is exactly how this
+  // passed locally and failed in CI.
+  const browser = await chromium.launch(
+    process.env.PLAYWRIGHT_CHROMIUM_PATH
+      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
+      : {}
+  );
 
   /* === 1. FIRST VISIT: nothing may fire === */
   {
@@ -593,6 +609,75 @@ async function run() {
     check(
       "visibleClass still stores the decision",
       (await storedConsent(context)) !== null
+    );
+    await context.close();
+  }
+
+  /* === 12. author-built placeholder template ===
+     Styling and copy belong in the author's editor, not in this
+     script. When a template exists it must be cloned verbatim, the
+     template itself must never render, and its control must work. */
+  {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    requestLog = [];
+    await page.goto(BASE() + "?template=1", { waitUntil: "networkidle" });
+
+    const built = await page.evaluate(() => {
+      const boxes = Array.from(document.querySelectorAll("[data-cc-placeholder]"));
+      const tpl = document.querySelector("[data-cc-placeholder-template]");
+      return {
+        count: boxes.length,
+        keptClass: boxes.every((b) => b.classList.contains("my_placeholder")),
+        keptCopy: boxes.every((b) =>
+          b.textContent.includes("Indhold fra tredjepart.")
+        ),
+        categories: boxes.map((b) => b.getAttribute("data-cc-placeholder")),
+        generatedFallback: document.querySelectorAll("[data-cc-placeholder-text]").length,
+        templateStillInDom: !!tpl,
+        templatePainted: tpl ? tpl.offsetParent !== null : null
+      };
+    });
+
+    check("template is cloned for each blocked embed", built.count === 2, `got ${built.count}`);
+    check("clone keeps the author's classes", built.keptClass);
+    check("clone keeps the author's copy", built.keptCopy);
+    check("no generated fallback when a template exists", built.generatedFallback === 0);
+    check("the template itself never renders", built.templatePainted === false,
+      `painted=${built.templatePainted}`);
+    eq("each clone carries its embed's category", built.categories, ["marketing", "marketing"]);
+
+    // The author's own control must drive consent.
+    // The template's own control sits in the DOM and matches the same
+    // selector as the live ones. It must be inert — a click routed to
+    // it (however it happens) may not grant anything.
+    await page.evaluate(() =>
+      document
+        .querySelector('[data-cc-placeholder-template] [data-cc="allow-embed"]')
+        .click()
+    );
+    await page.waitForTimeout(200);
+    check(
+      "the template's own control is inert",
+      (await storedConsent(context)) === null,
+      `stored: ${JSON.stringify(await storedConsent(context))}`
+    );
+
+    // Scope to a rendered clone: the template's own control is in the
+    // DOM too, and it is display:none.
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: "networkidle" }),
+      page.click('[data-cc-placeholder] [data-cc="allow-embed"]')
+    ]);
+    eq("the template's control grants only that category", (await storedConsent(context)).c, {
+      analytics: 0,
+      personalization: 0,
+      marketing: 1
+    });
+    check(
+      "embeds load after using the template control",
+      requestLog.filter((u) => u.startsWith("/embeds/")).length === 2,
+      `fetched: ${requestLog.filter((u) => u.startsWith("/embeds/")).join(", ")}`
     );
     await context.close();
   }

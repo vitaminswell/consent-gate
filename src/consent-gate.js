@@ -7,7 +7,7 @@
 
    Load it SYNCHRONOUSLY in the <head>, above every tracker:
 
-     <script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.1/dist/consent-gate.min.js"
+     <script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.2/dist/consent-gate.min.js"
              data-cg-cookie="acme-consent"></script>
 
    Not async, not defer. That is not a style preference — the
@@ -394,32 +394,60 @@
     }
   }
 
+  // The placeholder is the one piece of UI this script creates rather
+  // than reads, which would otherwise force its styling and copy into
+  // code. Mark an element [data-cc-placeholder-template] and it gets
+  // cloned instead — so layout, classes and translation all stay in
+  // your editor, exactly like the banner and panel.
+  //
+  // The template must contain a control marked data-cc="allow-embed".
+  // Without a template, a plain fallback is generated from CFG.text.
+  function buildPlaceholder(category) {
+    var template = document.querySelector("[data-cc-placeholder-template]");
+    var box;
+
+    if (template) {
+      box = template.cloneNode(true);
+      box.removeAttribute("data-cc-placeholder-template");
+      box.removeAttribute("hidden");
+
+      if (!box.querySelector('[data-cc="allow-embed"]') && !state.warnedTemplate) {
+        state.warnedTemplate = true;
+        // Silent dead buttons are the worst failure mode here, so say so.
+        if (window.console) {
+          console.warn(
+            "[consent-gate] placeholder template has no element with " +
+              'data-cc="allow-embed" — visitors cannot load the embed from it.'
+          );
+        }
+      }
+    } else {
+      box = document.createElement("div");
+
+      var text = document.createElement("p");
+      text.setAttribute("data-cc-placeholder-text", "");
+      text.textContent = CFG.text.placeholder;
+
+      var button = document.createElement("button");
+      button.type = "button";
+      button.setAttribute("data-cc", "allow-embed");
+      button.setAttribute("data-cc-placeholder-button", "");
+      button.textContent = CFG.text.placeholderButton;
+
+      box.appendChild(text);
+      box.appendChild(button);
+    }
+
+    // Carries the category for the delegated allow-embed handler.
+    box.setAttribute("data-cc-placeholder", category);
+    return box;
+  }
+
   function addPlaceholder(frame, category) {
     var prev = frame.previousElementSibling;
     if (prev && prev.hasAttribute("data-cc-placeholder")) return;
 
-    var box = document.createElement("div");
-    box.setAttribute("data-cc-placeholder", category);
-
-    var text = document.createElement("p");
-    text.setAttribute("data-cc-placeholder-text", "");
-    text.textContent = CFG.text.placeholder;
-
-    var button = document.createElement("button");
-    button.type = "button";
-    button.setAttribute("data-cc-placeholder-button", "");
-    button.textContent = CFG.text.placeholderButton;
-    button.addEventListener("click", function () {
-      // Consent for one embed is consent for its whole category —
-      // pretending otherwise would misrepresent what is stored.
-      var next = cloneConsent(state.consent);
-      next[category] = 1;
-      apply(next, "placeholder");
-    });
-
-    box.appendChild(text);
-    box.appendChild(button);
-    frame.parentNode.insertBefore(box, frame);
+    frame.parentNode.insertBefore(buildPlaceholder(category), frame);
     frame.setAttribute("data-cc-blocked", "");
   }
 
@@ -447,7 +475,10 @@
       'html.cc-ready [data-cc="manager"]{visibility:visible}' +
       "[data-cc][hidden]{display:none!important}" +
       "html[data-cc-scroll-lock],html[data-cc-scroll-lock] body{overflow:hidden}" +
-      "iframe[data-cc-blocked]{display:none!important}";
+      "iframe[data-cc-blocked]{display:none!important}" +
+      // Hidden live, but still visible in a visual editor (which does
+      // not run this script) so the template can be styled there.
+      "[data-cc-placeholder-template]{display:none!important}";
 
     if (document.readyState === "loading") {
       document.write("<style>" + css + "</style>");
@@ -707,6 +738,11 @@
       var trigger = event.target.closest ? event.target.closest("[data-cc]") : null;
       if (!trigger) return;
 
+      // A template is inert markup, not live UI. Its controls sit in
+      // the DOM and match these selectors, so ignore anything inside
+      // one rather than acting on a control that was never rendered.
+      if (trigger.closest("[data-cc-placeholder-template]")) return;
+
       switch (trigger.getAttribute("data-cc")) {
         case "allow":
           event.preventDefault();
@@ -724,6 +760,19 @@
           event.preventDefault();
           openPreferences();
           break;
+        case "allow-embed": {
+          event.preventDefault();
+          // Consent for one embed is consent for its whole category —
+          // pretending otherwise would misrepresent what gets stored.
+          var box = trigger.closest("[data-cc-placeholder]");
+          var category = box && box.getAttribute("data-cc-placeholder");
+          if (category) {
+            var next = cloneConsent(state.consent);
+            next[category] = 1;
+            apply(next, "placeholder");
+          }
+          break;
+        }
         case "close":
           event.preventDefault();
           if (!state.els.prefs || state.els.prefs.hasAttribute("hidden")) {

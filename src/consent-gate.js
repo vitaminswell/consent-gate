@@ -7,7 +7,7 @@
 
    Load it SYNCHRONOUSLY in the <head>, above every tracker:
 
-     <script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.2/dist/consent-gate.min.js"
+     <script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.3/dist/consent-gate.min.js"
              data-cg-cookie="acme-consent"></script>
 
    Not async, not defer. That is not a style preference — the
@@ -636,6 +636,8 @@
 
   // Webflow paints its custom checkbox on a sibling div rather than
   // the real input, so the visual state has to be pushed manually.
+  // A default-shape checkbox has no such div; it is driven by the
+  // data-cc-checked mirror on the wrapper instead.
   function reflectCustomCheckbox(input) {
     var custom = input.previousElementSibling;
     while (custom && String(custom.className).indexOf("w-checkbox-input") === -1) {
@@ -689,6 +691,11 @@
 
   function renderUI() {
     if (!state.ready) return;
+    // Re-read the toggles from stored consent on every render, not
+    // just when the panel opens. Reject All lives inside the panel,
+    // so without this the boxes keep the state the visitor just
+    // abandoned — visibly contradicting the cookie that was written.
+    syncCheckboxes();
     if (state.consent) {
       hide(state.els.banner);
       show(state.els.manager);

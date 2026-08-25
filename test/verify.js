@@ -331,6 +331,93 @@ async function run() {
     await context.close();
   }
 
+  /* === 3b. REJECT ALL FROM INSIDE THE PANEL RESETS THE TOGGLES ===
+     Reject All sits inside the preferences panel, so the boxes the
+     visitor just ticked are still on screen when consent is written.
+     If they are not re-synced, the UI contradicts the cookie. */
+  {
+    const { context, page } = await freshPage(browser);
+    await page.click('[data-cc="open-preferences"]');
+    await page.waitForTimeout(100);
+
+    await page.evaluate(() =>
+      document.querySelectorAll("[data-cc-checkbox]").forEach((b) => {
+        b.checked = true;
+        b.dispatchEvent(new Event("change", { bubbles: true }));
+      })
+    );
+    await page.click('[data-cc="preferences"] [data-cc="deny"]');
+    await page.waitForTimeout(200);
+
+    const stale = await page.evaluate(() =>
+      Array.from(document.querySelectorAll("[data-cc-checkbox]")).filter((b) => {
+        const visual = b.previousElementSibling;
+        return (
+          b.checked ||
+          (visual && visual.classList.contains("w--redirected-checked"))
+        );
+      }).length
+    );
+    check("reject-all clears the toggles immediately", stale === 0, `${stale} still on`);
+    eq("reject-all from the panel stores all zeros", (await storedConsent(context)).c, {
+      analytics: 0,
+      personalization: 0,
+      marketing: 0
+    });
+    await context.close();
+  }
+
+  /* === 3c. WEBFLOW'S *DEFAULT* CHECKBOX SHAPE ===
+     The custom checkbox paints a sibling div; the default one carries
+     w-checkbox-input on the input itself, with the visual built from
+     separate dot/track divs. Walking backwards found nothing there,
+     so the toggle never repainted. */
+  {
+    const { context, page } = await freshPage(browser);
+
+    // Rebuild one toggle the way Webflow emits a default checkbox.
+    await page.evaluate(() => {
+      const input = document.querySelector('[data-cc-checkbox="marketing"]');
+      const label = input.closest("label");
+      label.innerHTML =
+        '<div data-cc-dot class="cookie_toggle_dot"></div>' +
+        '<input type="checkbox" data-cc-checkbox="marketing" ' +
+        'class="w-checkbox-input cookie_toggle_input">' +
+        '<span class="cookie_toggle_label w-form-label">Marketing</span>' +
+        '<div class="cookie_toggle_track"></div>';
+    });
+
+    await page.click('[data-cc="open-preferences"]');
+    await page.waitForTimeout(100);
+    await page.evaluate(() => {
+      const b = document.querySelector('[data-cc-checkbox="marketing"]');
+      b.checked = true;
+      b.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    const on = await page.evaluate(() =>
+      document.querySelector('[data-cc-checkbox="marketing"]')
+        .closest("[data-cc-toggle]").getAttribute("data-cc-checked")
+    );
+    check("default-shape toggle reports checked", on === "true", `got ${on}`);
+
+    await page.click('[data-cc="preferences"] [data-cc="deny"]');
+    await page.waitForTimeout(200);
+
+    const off = await page.evaluate(() => {
+      const b = document.querySelector('[data-cc-checkbox="marketing"]');
+      return {
+        attr: b.closest("[data-cc-toggle]").getAttribute("data-cc-checked"),
+        checked: b.checked
+      };
+    });
+    eq("default-shape toggle resets on reject-all", off, {
+      attr: "false",
+      checked: false
+    });
+    await context.close();
+  }
+
   /* === 4. GRANULAR: analytics only === */
   {
     const { context, page } = await freshPage(browser);

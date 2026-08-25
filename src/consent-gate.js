@@ -7,7 +7,7 @@
 
    Load it SYNCHRONOUSLY in the <head>, above every tracker:
 
-     <script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.3/dist/consent-gate.min.js"
+     <script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.4/dist/consent-gate.min.js"
              data-cg-cookie="acme-consent"></script>
 
    Not async, not defer. That is not a style preference — the
@@ -100,7 +100,12 @@
       "'self'",
       "https://www.google.com",
       "https://www.gstatic.com",
-      "https://recaptcha.google.com"
+      "https://recaptcha.google.com",
+      // Webflow serves its form spam protection from Turnstile. Left
+      // out, the parser-time CSP blocks the challenge iframe, every
+      // form on the site fails, and its api.js floods the console
+      // with postMessage errors against a null origin.
+      "https://challenges.cloudflare.com"
     ],
 
     // Host fragment -> category, for autoBlockEmbeds.

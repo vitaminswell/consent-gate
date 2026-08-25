@@ -244,6 +244,11 @@ async function run() {
       !!csp && csp.indexOf("https://www.google.com") !== -1,
       `csp=${csp}`
     );
+    check(
+      "the CSP still permits Turnstile frames",
+      !!csp && csp.indexOf("https://challenges.cloudflare.com") !== -1,
+      `csp=${csp}`
+    );
 
     await context.close();
   }

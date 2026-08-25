@@ -8,7 +8,7 @@ Consent Mode v2, and costs nothing.
 No subscription.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.3/dist/consent-gate.min.js"
+<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.4/dist/consent-gate.min.js"
         data-cg-cookie="acme-consent"></script>
 ```
 
@@ -29,7 +29,7 @@ This is the attribute toggling, done properly.
 **1. Load it in the `<head>`, above every tracker.**
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.3/dist/consent-gate.min.js"
+<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.4/dist/consent-gate.min.js"
         data-cg-cookie="acme-consent"></script>
 ```
 
@@ -214,7 +214,7 @@ Everything else goes in a global declared **before** the script:
 | `autoBlockEmbeds` | `true` | Catch untagged third-party iframes. |
 | `hardBlockEmbeds` | `true` | The CSP layer. |
 | `reloadOnEmbedGrant` | `true` | |
-| `alwaysAllowedFrames` | reCAPTCHA hosts | Never CSP-blocked. |
+| `alwaysAllowedFrames` | reCAPTCHA + Turnstile hosts | Never CSP-blocked. Add any host whose iframe must survive the pre-consent CSP. |
 | `embedBlocklist` | YouTube, Vimeo, Maps, … | `[hostFragment, category]` pairs. |
 | `text` | English | The whole translation surface. |
 

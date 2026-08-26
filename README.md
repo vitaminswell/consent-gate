@@ -8,7 +8,7 @@ Consent Mode v2, and costs nothing.
 No subscription.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.4/dist/consent-gate.min.js"
+<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.5/dist/consent-gate.min.js"
         data-cg-cookie="acme-consent"></script>
 ```
 
@@ -29,7 +29,7 @@ This is the attribute toggling, done properly.
 **1. Load it in the `<head>`, above every tracker.**
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.4/dist/consent-gate.min.js"
+<script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.5/dist/consent-gate.min.js"
         data-cg-cookie="acme-consent"></script>
 ```
 

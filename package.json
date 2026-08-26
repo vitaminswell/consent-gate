@@ -1,6 +1,6 @@
 {
   "name": "consent-gate",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A first-party cookie consent gate for Webflow and static sites. Blocks scripts and embeds before consent, speaks Google Consent Mode v2, no subscription.",
   "main": "dist/consent-gate.js",
   "files": [

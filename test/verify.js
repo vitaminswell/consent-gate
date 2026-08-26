@@ -423,6 +423,67 @@ async function run() {
     await context.close();
   }
 
+  /* === 3d. FOCUS LEAVES A CONTAINER BEFORE IT IS HIDDEN ===
+     When [hidden] genuinely hides the element the browser moves
+     focus to <body> itself, so this can only bite where author CSS
+     out-specifies [hidden] and the panel stays rendered — the common
+     Webflow case, where the wrapper class carries its own display.
+     There, focus stays inside and aria-hidden lands on a focused
+     subtree: Chrome refuses to honour it and assistive tech is left
+     on a control that is supposed to be gone. */
+  {
+    const { context, page } = await freshPage(browser);
+
+    // Reproduce the Webflow shape: a display that beats [hidden].
+    await page.addStyleTag({
+      content: '[data-cc="preferences"][hidden]{display:block}'
+    });
+
+    await page.evaluate(() =>
+      document
+        .querySelector('[data-cc="manager"] [data-cc="open-preferences"], [data-cc="banner"] [data-cc="open-preferences"]')
+        .click()
+    );
+    await page.waitForTimeout(100);
+
+    await page.evaluate(() => {
+      const b = document.querySelector('[data-cc="preferences"] [data-cc-checkbox]');
+      b.focus();
+    });
+    const focusedInside = await page.evaluate(() =>
+      document.querySelector('[data-cc="preferences"]').contains(document.activeElement)
+    );
+    check("setup: focus starts inside the panel", focusedInside, "focus never entered");
+
+    // The violation is transient — focus is restored a moment later
+    // either way — so sample at the instant the panel is hidden
+    // rather than inspecting the settled state.
+    await page.evaluate(() => {
+      const prefs = document.querySelector('[data-cc="preferences"]');
+      window.__strandedAt = [];
+      new MutationObserver((records) => {
+        for (const r of records) {
+          window.__strandedAt.push({
+            attr: r.attributeName,
+            focusInside: prefs.contains(document.activeElement)
+          });
+        }
+      }).observe(prefs, { attributes: true, attributeFilter: ["hidden", "aria-hidden"] });
+    });
+
+    await page.click('[data-cc="preferences"] [data-cc="deny"]');
+    await page.waitForTimeout(200);
+
+    const samples = await page.evaluate(() => window.__strandedAt);
+    const violated = samples.filter((s) => s.focusInside).map((s) => s.attr);
+    check(
+      "focus is out before the panel is hidden",
+      violated.length === 0,
+      `focus still inside when ${violated.join(" and ")} applied`
+    );
+    await context.close();
+  }
+
   /* === 4. GRANULAR: analytics only === */
   {
     const { context, page } = await freshPage(browser);

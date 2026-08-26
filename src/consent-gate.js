@@ -7,7 +7,7 @@
 
    Load it SYNCHRONOUSLY in the <head>, above every tracker:
 
-     <script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.4/dist/consent-gate.min.js"
+     <script src="https://cdn.jsdelivr.net/gh/vitaminswell/consent-gate@v1.0.5/dist/consent-gate.min.js"
              data-cg-cookie="acme-consent"></script>
 
    Not async, not defer. That is not a style preference — the
@@ -571,8 +571,36 @@
     el.removeAttribute("hidden");
     if (CFG.visibleClass) el.classList.add(CFG.visibleClass);
   }
+  // Focus has to leave a container BEFORE it is hidden. Hiding an
+  // ancestor of the focused element — with [hidden] or aria-hidden —
+  // strands screen-reader and keyboard users on a control the
+  // accessibility tree no longer exposes, and the browser rightly
+  // refuses to honour the aria-hidden at all.
+  function releaseFocus(container) {
+    var active = document.activeElement;
+    if (!container || !active || !container.contains(active)) return;
+
+    // Prefer whatever opened the panel, but only if it still exists,
+    // sits outside what is being hidden, and is not itself hidden.
+    var target = state.lastFocus;
+    var usable =
+      target &&
+      typeof target.focus === "function" &&
+      target !== document.body &&
+      document.contains(target) &&
+      !container.contains(target) &&
+      !(target.closest && target.closest("[hidden]"));
+
+    // Blur unconditionally first. focus() on <body> is a no-op in
+    // Chromium, so a focus()-only path can leave focus exactly where
+    // it was — inside the thing about to be hidden.
+    if (active.blur) active.blur();
+    if (usable) target.focus();
+  }
+
   function hide(el) {
     if (!el) return;
+    releaseFocus(el);
     el.setAttribute("hidden", "");
     if (CFG.visibleClass) el.classList.remove(CFG.visibleClass);
   }

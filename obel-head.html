@@ -61,12 +61,13 @@
   var wfRef = null;
 
   function applyChoice() {
-    if (!wfRef || !window.ConsentGate) return;
+    // Re-check on every call: the object was incomplete once and
+    // could be replaced again, and throwing in here would leave the
+    // visitor's choice unrecorded with nothing but a console error.
+    if (!usable(wfRef) || !window.ConsentGate) return;
 
     var granted = !!window.ConsentGate.has(CATEGORY);
-    var current = typeof wfRef.getUserTrackingChoice === "function"
-      ? wfRef.getUserTrackingChoice()
-      : null;
+    var current = wfRef.getUserTrackingChoice();
 
     // Re-issuing the same choice on every page view would restart
     // tracking each navigation, so only act on an actual change.
@@ -85,9 +86,21 @@
   // exist on the published global — and requiring it meant the poll
   // below never resolved, so the bridge silently did nothing while
   // wf.denyUserTracking() worked perfectly when called by hand.
+  // Every method this bridge calls, not just the one it reads. The
+  // Analyze snippet publishes wf in stages: getUserTrackingChoice
+  // lands first, allowUserTracking and denyUserTracking a moment
+  // later. Gating on the reader alone latched onto a half-built
+  // object and threw "denyUserTracking is not a function".
+  function usable(wf) {
+    return !!wf &&
+      typeof wf.getUserTrackingChoice === "function" &&
+      typeof wf.allowUserTracking === "function" &&
+      typeof wf.denyUserTracking === "function";
+  }
+
   function attempt(callback) {
     var wf = window.wf;
-    if (!wf || typeof wf.getUserTrackingChoice !== "function") return false;
+    if (!usable(wf)) return false;
     if (typeof wf.ready === "function") {
       wf.ready(function () { callback(wf); });
     } else {

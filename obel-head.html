@@ -40,3 +40,67 @@
         data-cg-categories="analytics,personalization,marketing"
         data-cg-lifetime="180"
         data-cg-version="1"></script>
+
+<!-- ==========================================================
+     WEBFLOW ANALYZE — consent bridge
+     ------------------------------------------------------------
+     Webflow Analyze is first-party and injected by Webflow's own
+     runtime, so none of the gate's three blocking layers touch it:
+     it is not a tagged script, not a third-party iframe, and not a
+     Consent Mode signal. It is gated only through wf.*UserTracking,
+     so without this bridge Analyze keeps tracking after Reject All.
+
+     wf is a global published by the Analyze runtime, which loads
+     after this head code — hence the wait rather than a direct call.
+     ========================================================== -->
+<script>
+(function () {
+  // Which consent-gate category governs Webflow Analyze.
+  var CATEGORY = "analytics";
+
+  var wfRef = null;
+
+  function applyChoice() {
+    if (!wfRef || !window.ConsentGate) return;
+
+    var granted = !!window.ConsentGate.has(CATEGORY);
+    var current = typeof wfRef.getUserTrackingChoice === "function"
+      ? wfRef.getUserTrackingChoice()
+      : null;
+
+    // Re-issuing the same choice on every page view would restart
+    // tracking each navigation, so only act on an actual change.
+    if (granted && current !== "allow") {
+      wfRef.allowUserTracking({ activate: true });
+    } else if (!granted && current !== "deny") {
+      // Undecided counts as deny: Webflow must not track before
+      // the visitor has chosen. No reload option — consent-gate
+      // owns reload decisions, and two reloads per click is a bug.
+      wfRef.denyUserTracking();
+    }
+  }
+
+  function whenWebflowReady(callback) {
+    if (window.wf && window.wf.ready) return callback(window.wf);
+    var tries = 0;
+    var timer = setInterval(function () {
+      if (window.wf && window.wf.ready) {
+        clearInterval(timer);
+        callback(window.wf);
+      } else if (++tries > 100) {
+        clearInterval(timer); // ~10s: Analyze is not on this page
+      }
+    }, 100);
+  }
+
+  whenWebflowReady(function (wf) {
+    wf.ready(function () {
+      wfRef = wf;
+      applyChoice();
+    });
+  });
+
+  // Fires on accept, reject, granular submit and the JS API alike.
+  document.addEventListener("consentgate:change", applyChoice);
+})();
+</script>

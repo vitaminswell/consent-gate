@@ -85,6 +85,30 @@ Everything is styled by you — this script ships no CSS you have to adopt.
 | `data-cc-placeholder-template` | container *(optional)* | Cloned in place of each blocked embed. See below |
 | `data-cc="allow-embed"` | button, inside the template | Loads that embed by granting its category |
 
+### If you wrap the components in a fixed container
+
+A common pattern is one fixed, full-viewport wrapper holding the banner, panel
+and manager, with each positioned absolutely inside it. That wrapper's box
+exists whether or not anything inside it is visible — so it silently swallows
+every click on the page, even after the visitor has accepted and the banner is
+gone.
+
+Make the wrapper transparent to the mouse and hand interactivity back to the
+parts that need it:
+
+```css
+.your-cookie-wrapper { pointer-events: none }
+
+[data-cc="banner"],
+[data-cc="preferences"],
+[data-cc="manager"] { pointer-events: auto }
+```
+
+Children inherit `auto`, so the buttons, toggles and the click-to-close overlay
+all keep working. Nothing in the script depends on this — it is purely a
+consequence of the fixed wrapper, and worth checking whenever a page mysteriously
+stops responding to clicks.
+
 ## Tagging trackers
 
 **Scripts** ship inert and are revived on consent:

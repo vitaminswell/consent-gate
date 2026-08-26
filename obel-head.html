@@ -81,16 +81,12 @@
     }
   }
 
-  // Gate on the method actually needed, not on wf.ready. The docs
-  // wrap every example in wf.ready(), but it is not guaranteed to
-  // exist on the published global — and requiring it meant the poll
-  // below never resolved, so the bridge silently did nothing while
-  // wf.denyUserTracking() worked perfectly when called by hand.
-  // Every method this bridge calls, not just the one it reads. The
-  // Analyze snippet publishes wf in stages: getUserTrackingChoice
-  // lands first, allowUserTracking and denyUserTracking a moment
-  // later. Gating on the reader alone latched onto a half-built
-  // object and threw "denyUserTracking is not a function".
+  // Wait for every method this bridge calls, not just the one it
+  // reads. The Analyze snippet publishes wf in stages — ready and
+  // getUserTrackingChoice land first, allowUserTracking and
+  // denyUserTracking a moment later — so gating on wf.ready alone
+  // latched onto a half-built object and threw
+  // "denyUserTracking is not a function" before recording anything.
   function usable(wf) {
     return !!wf &&
       typeof wf.getUserTrackingChoice === "function" &&

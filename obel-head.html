@@ -80,24 +80,37 @@
     }
   }
 
+  // Gate on the method actually needed, not on wf.ready. The docs
+  // wrap every example in wf.ready(), but it is not guaranteed to
+  // exist on the published global — and requiring it meant the poll
+  // below never resolved, so the bridge silently did nothing while
+  // wf.denyUserTracking() worked perfectly when called by hand.
+  function attempt(callback) {
+    var wf = window.wf;
+    if (!wf || typeof wf.getUserTrackingChoice !== "function") return false;
+    if (typeof wf.ready === "function") {
+      wf.ready(function () { callback(wf); });
+    } else {
+      callback(wf);
+    }
+    return true;
+  }
+
   function whenWebflowReady(callback) {
-    if (window.wf && window.wf.ready) return callback(window.wf);
+    if (attempt(callback)) return;
     var tries = 0;
     var timer = setInterval(function () {
-      if (window.wf && window.wf.ready) {
-        clearInterval(timer);
-        callback(window.wf);
-      } else if (++tries > 100) {
-        clearInterval(timer); // ~10s: Analyze is not on this page
+      if (attempt(callback) || ++tries > 100) {
+        clearInterval(timer); // resolved, or ~10s: Analyze not on this page
       }
     }, 100);
   }
 
+  // attempt() has already dealt with wf.ready, so the callback must
+  // not call it again — doing so threw on every poll tick.
   whenWebflowReady(function (wf) {
-    wf.ready(function () {
-      wfRef = wf;
-      applyChoice();
-    });
+    wfRef = wf;
+    applyChoice();
   });
 
   // Fires on accept, reject, granular submit and the JS API alike.
